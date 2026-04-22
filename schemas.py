@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 class ApplicationBase(BaseModel):
@@ -7,7 +7,7 @@ class ApplicationBase(BaseModel):
     role: str
     date_applied: date
     status: str
-    reminder_date: Optional[date] = None
+    reminder_date: Optional[datetime] = None
 
 class ApplicationCreate(ApplicationBase):
     pass
@@ -19,4 +19,4 @@ class ApplicationResponse(ApplicationBase):
     id: int
 
     class Config:
-        orm_mode = True # Use 'from_attributes' instead of 'orm_mode' if using Pydantic V2
+        from_attributes = True

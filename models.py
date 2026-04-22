@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, DateTime
 from database import Base
 
 class Application(Base):
@@ -9,4 +9,4 @@ class Application(Base):
     role = Column(String)
     date_applied = Column(Date)
     status = Column(String, default="Applied")
-    reminder_date = Column(Date, nullable=True)
+    reminder_date = Column(DateTime, nullable=True)
