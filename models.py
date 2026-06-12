@@ -13,6 +13,7 @@ class UTCDateTime(TypeDecorator):
                 value = value.replace(tzinfo=timezone.utc)
             else:
                 value = value.astimezone(timezone.utc)
+            return value.replace(tzinfo=None)
         return value
 
     def process_result_value(self, value, dialect):
