@@ -56,6 +56,21 @@ def inspect_db_schema(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e), "traceback": traceback.format_exc()}
 
+@app.get("/migrate-db")
+def migrate_db(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    try:
+        db_type = db.bind.dialect.name
+        if db_type == "postgresql":
+            # Alter table to change reminder_date type to TIMESTAMP
+            db.execute(text("ALTER TABLE applications ALTER COLUMN reminder_date TYPE TIMESTAMP"))
+            db.commit()
+            return {"status": "success", "message": "Successfully migrated reminder_date to TIMESTAMP in PostgreSQL"}
+        else:
+            return {"status": "success", "message": "SQLite database detected; no migration needed"}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
+
 @app.get("/applications", response_model=List[schemas.ApplicationResponse])
 def get_applications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     applications = db.query(models.Application).offset(skip).limit(limit).all()
