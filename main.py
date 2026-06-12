@@ -1,9 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
-import traceback
 
 import models, schemas
 from database import engine, get_db
@@ -22,54 +20,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.exception_handler(Exception)
-def debug_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "message": "Debug Exception",
-            "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        }
-    )
-
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Internship Tracker API"}
-
-@app.get("/inspect-db-schema")
-def inspect_db_schema(db: Session = Depends(get_db)):
-    from sqlalchemy import text
-    try:
-        # Check if SQLite or Postgres
-        db_type = db.bind.dialect.name
-        if db_type == "postgresql":
-            query = text("""
-                SELECT column_name, data_type 
-                FROM information_schema.columns 
-                WHERE table_name = 'applications'
-            """)
-        else:
-            query = text("PRAGMA table_info(applications)")
-        
-        result = db.execute(query).fetchall()
-        return {"dialect": db_type, "columns": [dict(r._mapping) for r in result]}
-    except Exception as e:
-        return {"error": str(e), "traceback": traceback.format_exc()}
-
-@app.get("/migrate-db")
-def migrate_db(db: Session = Depends(get_db)):
-    from sqlalchemy import text
-    try:
-        db_type = db.bind.dialect.name
-        if db_type == "postgresql":
-            # Alter table to change reminder_date type to TIMESTAMP
-            db.execute(text("ALTER TABLE applications ALTER COLUMN reminder_date TYPE TIMESTAMP"))
-            db.commit()
-            return {"status": "success", "message": "Successfully migrated reminder_date to TIMESTAMP in PostgreSQL"}
-        else:
-            return {"status": "success", "message": "SQLite database detected; no migration needed"}
-    except Exception as e:
-        return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
 
 @app.get("/applications", response_model=List[schemas.ApplicationResponse])
 def get_applications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
