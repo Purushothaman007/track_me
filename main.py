@@ -36,6 +36,26 @@ def debug_exception_handler(request, exc):
 def read_root():
     return {"message": "Welcome to the Internship Tracker API"}
 
+@app.get("/inspect-db-schema")
+def inspect_db_schema(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    try:
+        # Check if SQLite or Postgres
+        db_type = db.bind.dialect.name
+        if db_type == "postgresql":
+            query = text("""
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'applications'
+            """)
+        else:
+            query = text("PRAGMA table_info(applications)")
+        
+        result = db.execute(query).fetchall()
+        return {"dialect": db_type, "columns": [dict(r._mapping) for r in result]}
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
 @app.get("/applications", response_model=List[schemas.ApplicationResponse])
 def get_applications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     applications = db.query(models.Application).offset(skip).limit(limit).all()
