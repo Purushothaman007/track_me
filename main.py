@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
+import traceback
 
 import models, schemas
 from database import engine, get_db
@@ -19,6 +21,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+def debug_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "message": "Debug Exception",
+            "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        }
+    )
 
 @app.get("/")
 def read_root():
